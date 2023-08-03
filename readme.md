@@ -1,12 +1,2 @@
-# Sample project for Skillfactory students
-
-It showcases the basic usage of docker and docker-compose and illustrates explanations provided in modules E4.4 (PWS course) or G4.4 (FPW course).
-
-## Howto
-
-1. Download or clone this project
-2. Navigate inside docker-compose or docker-compose-main folder with `cd` command.
-3. Run `ls`  command and make sure docker-compose.yml and app, dbdata, nginx folders are listed.
-4. Run `docker-compose` up and visit http://0.0.0.0:8000
-
-Have fun!
+Задача
+Как системному администратору данной организации вам поставлена задача собрать на докер образ Django (Linux, nginx, Django, Postgres, Gunicorn) сервера, который можно было бы выложить в публичный доступ на Docker Hub, предоставляя кандидату только ссылку на образ и команду для установки. Все нужные сервисы должны быть проброшены на хост по стандартным портам, реализация HTTPS не требуется, версии Django, nginx и Postgres не имеют значения, как и версия ядра Linux. В проекте просто должна работать админка с заранее прописанным логином и паролем.
