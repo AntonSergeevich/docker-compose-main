@@ -1,35 +1,42 @@
-# Используем базовый образ с поддержкой Python
-FROM python:3.9
+# Используйте базовый образ с Linux
+FROM ubuntu:latest
 
 
-# Установка зависимостей
-RUN apt-get update && apt-get install -y nginx postgresql-client && rm -rf /var/lib/apt/lists/*
+# Обновите пакеты внутри образа
+RUN apt-get update && apt-get upgrade -y
 
 
-# Установка Django и Gunicorn
-RUN pip install gunicorn
+# Установите необходимые пакеты (Python, PostgreSQL, nginx и т.д.)
+RUN apt-get install -y python3 python3-pip postgresql postgresql-contrib nginx
 
 
-# Создание и переход в рабочую директорию
-WORKDIR /app
+# Создайте директорию для проекта
+RUN mkdir /app
 
 
-# Установка зависимостей Python
-COPY requirements.txt /app/
-RUN pip install --no-cache-dir -r requirements.txt
+# Скопируйте файлы проекта внутрь контейнера
+COPY . /app
 
 
-# Копирование проекта
-COPY . /app/
+# Установите зависимости Python
+RUN pip3 install -r /app/requirements.txt
 
 
-# Копирование конфига nginx
-COPY nginx.conf /etc/nginx/sites-available/default
+# Запустите PostgreSQL и настройте базу данных
+RUN service postgresql start && su - postgres -c "psql -c 'CREATE DATABASE mydatabase;'"
 
 
-# Открытие порта 80
+# Пропишите настройки nginx
+RUN ln -s /app/nginx.conf /etc/nginx/sites-enabled/
+RUN rm /etc/nginx/sites-enabled/default
+
+
+# Откройте порты
+EXPOSE 8000
 EXPOSE 80
+EXPOSE 5432
 
 
-# Запуск Gunicorn и nginx (без демона для фонового режима)
-CMD ["./start.sh"]
+# Запустите Gunicorn и nginx при старте контейнера
+CMD service postgresql start && gunicorn project.wsgi:application --bind 0.0.0.0:8000 && nginx -g "daemon off;"
+
