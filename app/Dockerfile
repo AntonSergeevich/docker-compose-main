@@ -1,28 +1,36 @@
-FROM python:3.9.6-alpine
+# Используйте базовый образ с Linux
+FROM ubuntu:latest
 
-# set work directory
-WORKDIR /usr/src/app
+# Отключите запросы на интерактивные действия
+ENV DEBIAN_FRONTEND=noninteractiveТЫ
 
-# set environment variables
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
+# Обновите пакеты внутри образа
+RUN apt-get update && apt-get upgrade -y
 
-# install psycopg2 dependencies
-RUN apk update \
-	&& apk add postgresql-dev gcc python3-dev musl-dev
+# Установите необходимые пакеты (Python, PostgreSQL, nginx и т.д.)
+RUN apt-get install -y python3 python3-pip postgresql postgresql-contrib nginx libpq-dev
 
-# install dependencies
-RUN pip install --upgrade pip
-COPY ./requirements.txt .
-RUN pip install -r requirements.txt
+# Создайте директорию для проекта
+RUN mkdir /app
 
-# copy entrypoint.sh
-COPY ./entrypoint.sh .
-RUN sed -i 's/\r$//g' /usr/src/app/entrypoint.sh
-RUN chmod +x /usr/src/app/entrypoint.sh
+# Скопируйте файлы проекта внутрь контейнера
+COPY . /app
 
-# copy project
-COPY . .
+# Установите зависимости Python
+RUN pip3 install -r /app/requirements.txt
 
-# run entrypoint.sh
-ENTRYPOINT ["/usr/src/app/entrypoint.sh"]
+# Запустите PostgreSQL и настройте базу данных
+RUN service postgresql start && su - postgres -c "psql -c 'CREATE DATABASE mydatabase;'"
+
+# Пропишите настройки nginx
+RUN ln -s /app/nginx.conf /etc/nginx/sites-enabled/
+RUN rm /etc/nginx/sites-enabled/default
+
+# Откройте порты
+EXPOSE 8000
+EXPOSE 80
+EXPOSE 5432
+
+# Запустите Gunicorn и nginx при старте контейнера
+CMD service postgresql start && gunicorn docker-compose-main.wsgi:application --bind 0.0.0.0:8000 && nginx -g "daemon off;"
+
